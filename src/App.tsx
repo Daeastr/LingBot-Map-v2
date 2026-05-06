@@ -29,6 +29,8 @@ const coreProbeEndpoints: ApiEndpoint[] = [
   '/.well-known/mcp.json',
 ];
 
+const authProbeEndpoint: ApiEndpoint = '/api/scan';
+
 const stageOrder: WorkflowStage[] = [
   'initial-load',
   'authentication',
@@ -53,11 +55,30 @@ const summarizeEndpointState = (response?: ApiResponse<unknown>): string => {
   return `Error: ${response.error.code}`;
 };
 
+const isAuthError = (response?: ApiResponse<unknown>): boolean => {
+  if (!response || response.ok) return false;
+  return response.error.code === 'UNAUTHORIZED';
+};
+
+const isOperational = (response?: ApiResponse<unknown>): boolean => {
+  if (!response) return false;
+  if (response.ok) return true;
+  return response.error.code === 'UNAUTHORIZED';
+};
+
+const statusMessage = (response?: ApiResponse<unknown>): string => {
+  if (!response) return 'Not called';
+  if (response.ok) return 'Operational';
+  return response.error.message;
+};
+
 export default function App() {
   const [stage, setStage] = useState<WorkflowStage>('initial-load');
   const [isLoading, setIsLoading] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [authRequired, setAuthRequired] = useState<boolean>(true);
+  const [backendPresent, setBackendPresent] = useState<boolean | null>(null);
   const [email, setEmail] = useState('admin@lingbot.io');
   const [password, setPassword] = useState('P@ssword1');
   const [datasetRef, setDatasetRef] = useState('dataset://war-pro-v4.1');
@@ -66,34 +87,50 @@ export default function App() {
   const [endpointResults, setEndpointResults] = useState<EndpointMap>({});
 
   const missingEndpoints = useMemo(
-    () => requiredEndpoints.filter((endpoint) => !endpointResults[endpoint] || endpointResults[endpoint]?.ok === false),
+    () => requiredEndpoints.filter((endpoint) => !isOperational(endpointResults[endpoint])),
     [endpointResults],
   );
 
-  useEffect(() => {
-    const runInitialLoad = async (): Promise<void> => {
-      setIsLoading(true);
-      setGlobalError(null);
+  const runInitialLoad = async (): Promise<void> => {
+    setIsLoading(true);
+    setGlobalError(null);
 
-      const results = await Promise.all(coreProbeEndpoints.map(async (endpoint) => [endpoint, await callEndpoint(endpoint)] as const));
+    const coreResults = await Promise.all(coreProbeEndpoints.map(async (endpoint) => [endpoint, await callEndpoint(endpoint)] as const));
+    const authProbeResult = await callEndpoint(authProbeEndpoint);
 
-      setEndpointResults((current) => {
-        const next = { ...current };
-        for (const [endpoint, response] of results) {
-          next[endpoint] = response;
-        }
-        return next;
-      });
-
-      const failed = results.filter(([, response]) => !response.ok);
-      if (failed.length > 0) {
-        setGlobalError('Some required endpoints are unavailable. Workflow remains available with fallback/error handling.');
+    setEndpointResults((current) => {
+      const next = { ...current };
+      for (const [endpoint, response] of coreResults) {
+        next[endpoint] = response;
       }
+      next[authProbeEndpoint] = authProbeResult;
+      return next;
+    });
 
-      setStage('authentication');
+    const apiRoot = coreResults.find(([endpoint]) => endpoint === '/api')?.[1];
+    const hasRuntime = Boolean(apiRoot) && (apiRoot?.ok || apiRoot?.error.code !== 'NOT_FOUND');
+    setBackendPresent(hasRuntime);
+
+    const authNeeded = isAuthError(authProbeResult);
+    setAuthRequired(authNeeded);
+
+    const failedCore = coreResults.filter(([, response]) => !response.ok);
+    if (!hasRuntime) {
+      setGlobalError('Backend is not reachable at /api. Verify serverless deployment and base URL configuration.');
+      setStage('initial-load');
       setIsLoading(false);
-    };
+      return;
+    }
 
+    if (failedCore.length > 0) {
+      setGlobalError('Some core endpoints are failing. You can continue, but stage execution may be degraded.');
+    }
+
+    setStage(authNeeded ? 'authentication' : 'ingestion-scan');
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
     void runInitialLoad();
   }, []);
 
@@ -102,7 +139,8 @@ export default function App() {
     setGlobalError(null);
 
     const endpoints = endpointGroups[target];
-    const results = await Promise.all(endpoints.map(async (endpoint) => [endpoint, await callEndpoint(endpoint, token ?? undefined)] as const));
+    const stageToken = authRequired ? token ?? undefined : undefined;
+    const results = await Promise.all(endpoints.map(async (endpoint) => [endpoint, await callEndpoint(endpoint, stageToken)] as const));
 
     setEndpointResults((current) => {
       const next = { ...current };
@@ -195,7 +233,23 @@ export default function App() {
           </ol>
         </section>
 
-        {stage === 'authentication' && (
+        {backendPresent === false && (
+          <section className="rounded-lg border border-rose-700 bg-rose-950/40 p-4 space-y-3">
+            <h2 className="text-sm font-semibold">Backend Unavailable</h2>
+            <p className="text-xs text-rose-200">
+              The `/api` route is missing or unreachable from this deployment. Fix backend routing before running the ACDP pipeline.
+            </p>
+            <button
+              className="rounded bg-rose-700 px-4 py-2 text-sm font-medium hover:bg-rose-600 disabled:opacity-50"
+              onClick={() => void runInitialLoad()}
+              disabled={isLoading}
+            >
+              Retry Initial Load
+            </button>
+          </section>
+        )}
+
+        {stage === 'authentication' && authRequired && (
           <section className="rounded-lg border border-slate-800 bg-slate-900/70 p-4">
             <h2 className="text-sm font-semibold mb-3">Authentication</h2>
             <form className="grid gap-3 md:grid-cols-3" onSubmit={handleAuth}>
@@ -229,7 +283,7 @@ export default function App() {
         {stage === 'ingestion-scan' && (
           <section className="rounded-lg border border-slate-800 bg-slate-900/70 p-4 space-y-3">
             <h2 className="text-sm font-semibold">CVE Ingestion / Scan</h2>
-            <p className="text-xs text-slate-300">Using {scanRef} and {datasetRef}</p>
+            <p className="text-xs text-slate-300">Using {scanRef} and {datasetRef}. Auth: {authRequired ? 'required' : 'not required'}.</p>
             <button
               className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium hover:bg-emerald-500 disabled:opacity-50"
               onClick={() => void executeStage('ingestion-scan')}
@@ -292,7 +346,7 @@ export default function App() {
               <tbody>
                 {requiredEndpoints.map((endpoint) => {
                   const response = endpointResults[endpoint];
-                  const message = response?.ok ? 'Operational' : response?.error.message ?? 'Not called';
+                  const message = statusMessage(response);
                   return (
                     <tr key={endpoint} className="border-b border-slate-800">
                       <td className="py-2 pr-3 font-mono">{endpoint}</td>
@@ -306,7 +360,7 @@ export default function App() {
           </div>
           {missingEndpoints.length > 0 && (
             <p className="mt-3 text-xs text-amber-300">
-              Fallback active for: {missingEndpoints.join(', ')}
+              Missing or failing endpoints: {missingEndpoints.join(', ')}
             </p>
           )}
         </section>

@@ -31,6 +31,32 @@ const networkFailure = (endpoint: ApiEndpoint, details: string): ApiErrorRespons
   },
 });
 
+const errorCodeFromStatus = (status: number): ApiErrorResponse['error']['code'] => {
+  if (status === 401 || status === 403) return 'UNAUTHORIZED';
+  if (status === 404) return 'NOT_FOUND';
+  if (status === 405) return 'METHOD_NOT_ALLOWED';
+  return 'INTERNAL_ERROR';
+};
+
+const fallbackError = (endpoint: ApiEndpoint, status: number, details: string): ApiErrorResponse => ({
+  ok: false,
+  endpoint,
+  auth: { required: status === 401 || status === 403, scheme: status === 401 || status === 403 ? 'Bearer' : 'None' },
+  timestamp: new Date().toISOString(),
+  error: {
+    code: errorCodeFromStatus(status),
+    message: `HTTP ${status} response received from endpoint.`,
+    details,
+  },
+});
+
+const isApiResponse = (value: unknown): value is ApiResponse<unknown> => {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  return 'ok' in value && 'endpoint' in value;
+};
+
 export const callEndpoint = async (endpoint: ApiEndpoint, token?: string): Promise<ApiResponse<unknown>> => {
   try {
     const response = await fetch(buildUrl(endpoint), {
@@ -38,14 +64,46 @@ export const callEndpoint = async (endpoint: ApiEndpoint, token?: string): Promi
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     });
 
-    const payload = (await response.json()) as ApiResponse<unknown>;
-    if (!response.ok) {
+    const raw = await response.text();
+    const contentType = response.headers.get('content-type') ?? '';
+
+    let payload: unknown = null;
+    if (raw.length > 0) {
+      if (contentType.includes('application/json')) {
+        try {
+          payload = JSON.parse(raw) as unknown;
+        } catch {
+          payload = null;
+        }
+      } else {
+        try {
+          payload = JSON.parse(raw) as unknown;
+        } catch {
+          payload = null;
+        }
+      }
+    }
+
+    if (isApiResponse(payload)) {
       return payload;
     }
 
-    return payload;
+    if (!response.ok) {
+      const details = raw.slice(0, 300) || 'No response body returned.';
+      return fallbackError(endpoint, response.status, details);
+    }
+
+    return {
+      ok: true,
+      endpoint,
+      auth: { required: false, scheme: 'None' },
+      timestamp: new Date().toISOString(),
+      data: payload ?? { message: raw.slice(0, 300) || 'Endpoint returned an empty response body.' },
+    };
+
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Network request failed with unknown error';
     return networkFailure(endpoint, message);
   }
+
 };
