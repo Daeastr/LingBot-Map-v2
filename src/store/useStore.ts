@@ -42,8 +42,8 @@ export const useStore = create<Store>((set) => ({
     // Priority check (UX-CONFIG 27: Ignore duplicates)
     if (state.notifications.some(n => n.message === notification.message)) return state;
 
-    const id = Math.random().toString(36).substring(7);
-    const newNotif: AppNotification = { ...notification, id } as AppNotification;
+    const id = crypto.randomUUID();
+    const newNotif: AppNotification = { id, ...notification };
     
     const notifications = [...state.notifications, newNotif]
       .sort((a, b) => {

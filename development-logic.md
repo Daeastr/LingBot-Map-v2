@@ -45,7 +45,7 @@ A solution architect must weave **Security, CI/CD, Scalability, Governance, and 
 - **Token‑efficient transformers:** Geometric context transformers use linear attention and locality‑sensitive hashing to scale to arbitrary map sizes without quadratic memory blow‑up.
 - **Tiled map representation:** The world is partitioned into sparse, overlapping tiles (2‑5 m³). Each tile is a self‑contained 3D feature volume, enabling unbounded map growth and parallel reconstruction across an edge cluster.
 - **Hierarchical inference:** A lightweight “gist” model decides which tiles need updating, reducing compute at steady‑state by >70%.
-- **Federated fine‑tuning:** Across robotic fleets, local models upload anonymised gradient updates (differential privacy gaurantee) to improve global drift‑correction, without moving raw data.
+- **Federated fine‑tuning:** Across robotic fleets, local models upload anonymised gradient updates (differential privacy guarantee) to improve global drift‑correction, without moving raw data.
 - **Multi‑tenant safety:** For AR glasses, multiple users can share a map simultaneously; the system isolates each user’s personal objects through instance‑aware segmentation, retaining a shared structural layer.
 
 ### 2.4 Governance

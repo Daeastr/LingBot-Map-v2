@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { useEffect, useState } from 'react';
 
 export const DriftChart = () => {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<Array<{ time: string; val: number }>>([]);
   const drift = useStore((state) => state.currentDrift);
 
   useEffect(() => {

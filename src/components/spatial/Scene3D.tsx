@@ -2,9 +2,10 @@ import { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Grid, PerspectiveCamera, Stars } from '@react-three/drei';
 import { useStore } from '../../store/useStore';
-import { Vector3, Color } from 'three';
+import { Vector3, Color, Group } from 'three';
+import { MapTile } from '../../types';
 
-const Tile = ({ position, confidence, semanticClass }: { position: Vector3, confidence: number, semanticClass: string }) => {
+const Tile = ({ position, confidence, semanticClass }: { position: Vector3, confidence: number, semanticClass: MapTile['semanticClass'] }) => {
   const color = useMemo(() => {
     if (semanticClass === 'dynamic') return new Color('#3b82f6');
     if (semanticClass === 'hazard') return new Color('#ef4444');
@@ -20,7 +21,7 @@ const Tile = ({ position, confidence, semanticClass }: { position: Vector3, conf
 };
 
 const Agent = () => {
-  const meshRef = useRef<any>(null);
+  const meshRef = useRef<Group>(null);
   const drift = useStore((state) => state.currentDrift);
 
   useFrame(() => {
@@ -42,7 +43,7 @@ const Agent = () => {
   );
 };
 
-export const Scene3D = ({ tiles }: { tiles: any[] }) => {
+export const Scene3D = ({ tiles }: { tiles: MapTile[] }) => {
 
   return (
     <div className="w-full h-full bg-[#050505] rounded-xl overflow-hidden border border-[#222]">

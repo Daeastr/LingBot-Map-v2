@@ -3,6 +3,7 @@ import { useStore } from '../store/useStore';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, CheckCircle, AlertTriangle, AlertCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { AppNotification } from '../types';
 
 export const NotificationStack = () => {
   const { notifications, removeNotification } = useStore();
@@ -22,7 +23,7 @@ export const NotificationStack = () => {
   );
 };
 
-const NotificationItem = ({ notification, onClose }: { notification: any, onClose: () => void }) => {
+const NotificationItem = ({ notification, onClose }: { notification: AppNotification, onClose: () => void }) => {
   React.useEffect(() => {
     if (notification.type === 'success') {
       const timer = setTimeout(onClose, 3000); // UX-CONFIG 7.2: Success auto-dismiss

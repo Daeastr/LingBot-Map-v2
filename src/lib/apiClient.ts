@@ -45,7 +45,7 @@ export const callEndpoint = async (endpoint: ApiEndpoint, token?: string): Promi
 
     return payload;
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown failure';
+    const message = error instanceof Error ? error.message : 'Network request failed with unknown error';
     return networkFailure(endpoint, message);
   }
 };

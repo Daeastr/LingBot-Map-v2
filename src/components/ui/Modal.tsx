@@ -49,7 +49,16 @@ export const Modal = ({ isOpen, onClose, title, children, className }: ModalProp
   );
 };
 
-export const AlertDialog = ({ isOpen, onClose, onConfirm, title, message, confirmText = "Confirm" }: any) => {
+interface AlertDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: string;
+  confirmText?: string;
+}
+
+export const AlertDialog = ({ isOpen, onClose, onConfirm, title, message, confirmText = "Confirm" }: AlertDialogProps) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} className="max-w-sm">
       <div className="space-y-4">
