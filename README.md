@@ -1,6 +1,16 @@
 # LingBot-Map v2
 
-LingBot-Map v2 is an edge-native workflow console that executes a synchronized ACDP pipeline: initial platform checks, authentication, CVE/scan ingestion, baseline/policy evaluation, and detection dispatch.
+LingBot-Map v2 is an ACDP workflow console that validates and executes a secure edge pipeline from scan intake through policy and dispatch decisions.
+
+## Purpose
+
+The app provides a staged operator experience for:
+- Endpoint health and runtime verification on initial load.
+- Optional authentication handoff for protected workflow routes.
+- CVE ingestion and scan execution.
+- Baseline and policy evaluation.
+- Audit, quarantine, and dispatch pipeline completion.
+- Summary and endpoint-level status reporting.
 
 ## Installation
 
@@ -11,18 +21,19 @@ LingBot-Map v2 is an edge-native workflow console that executes a synchronized A
 ### Setup
 ```bash
 npm install
-cp .env.example .env
 ```
 
-## Environment variables
-| Variable | Required | Runtime impact if missing |
-|---|---|---|
-| `VITE_API_BASE_URL` | Optional | Uses same-origin API paths (recommended for local dev and Vercel rewrites). |
-| `VITE_BASE_PATH` | Optional | Defaults to `/`; set for sub-path deployments such as GitHub Pages. |
-| `VITE_AUTH_EMAIL` | Optional | Defaults to `admin@lingbot.io` for local/operator auth gate. |
-| `VITE_AUTH_PASSWORD` | Optional | Defaults to `P@ssword1` for local/operator auth gate. |
+## Environment Variables
 
-## Run commands
+| Variable | Required | Description |
+|---|---|---|
+| `VITE_API_BASE_URL` | No | Optional absolute base URL for API calls. Defaults to same-origin routes. |
+| `VITE_BASE_PATH` | No | Optional UI base path for subpath deployments. |
+| `VITE_AUTH_EMAIL` | No | Operator email used by the client auth gate (default `admin@lingbot.io`). |
+| `VITE_AUTH_PASSWORD` | No | Operator password used by the client auth gate (default `P@ssword1`). |
+
+## Commands
+
 ```bash
 npm run dev
 npm run build
@@ -30,60 +41,69 @@ npm run preview
 npm run type-check
 ```
 
-## Happy path workflow
-1. Initial load probes core API and MCP endpoints.
-2. Operator authentication gate issues bearer token for protected routes.
-3. CVE ingestion + scan stage executes (`/api/scan`, `/api/ingest`).
-4. Baseline + policy stage executes (`/api/baseline`, `/api/policy`).
-5. Detection pipeline executes (`/api/audit`, `/api/quarantine`, `/api/dispatch`).
-6. Results view presents endpoint status and stage outputs.
+## Happy Path Workflow
 
-## API endpoints
-### Core
-- `GET /api`
-- `GET /api/health`
-- `GET /api/status`
-- `GET /api/version`
-- `GET /api/info`
+1. Initial load probes core API and MCP routes.
+2. App determines whether protected workflow routes require authentication.
+3. If required, operator authenticates and receives a bearer token for protected calls.
+4. CVE ingestion and scan stage runs (`/api/scan`, `/api/ingest`).
+5. Baseline and policy stage runs (`/api/baseline`, `/api/policy`).
+6. Detection stage runs (`/api/audit`, `/api/quarantine`, `/api/dispatch`).
+7. Results summary displays endpoint readiness and errors.
 
-### MDSOS / ACDP workflow
-- `GET /api/scan`
-- `GET /api/baseline`
-- `GET /api/policy`
-- `GET /api/audit`
-- `GET /api/quarantine`
-- `GET /api/ingest`
-- `GET /api/dispatch`
+## API Endpoints
 
-### MCP exposure
-- `GET /mcp`
-- `GET /mcp/health`
-- `GET /.well-known/mcp.json`
+### Core Endpoints
 
-## MCP exposure details
-MCP endpoints are implemented through backend route handling and Vercel rewrites. A static fallback descriptor is also shipped at `public/.well-known/mcp.json` for static hosting compatibility.
+| Method | Endpoint | Auth |
+|---|---|---|
+| GET | `/api` | No |
+| GET | `/api/health` | No |
+| GET | `/api/status` | No |
+| GET | `/api/version` | No |
+| GET | `/api/info` | No |
 
-## Architecture overview
-- `src/contracts/api.ts` defines strict endpoint, auth, success, and error contracts.
-- `src/lib/apiClient.ts` provides typed frontend endpoint calls and auth flow.
-- `dev-api-plugin.ts` provides local development endpoint implementation in the Vite server.
-- `api/index.ts` and `api/[...slug].ts` provide serverless route implementations for deployment.
-- `src/App.tsx` implements synchronized ACDP workflow UI, loading states, and endpoint error states.
+### ACDP Workflow Endpoints
 
-## Deployment configuration
-### Vercel
-- Framework preset: **Vite**
-- Build command: `npm run build`
-- Output directory: `dist`
-- Rewrites configured in `vercel.json` for `/mcp` and `/.well-known/mcp.json`.
+| Method | Endpoint | Auth |
+|---|---|---|
+| GET | `/api/scan` | Yes (Bearer) |
+| GET | `/api/ingest` | Yes (Bearer) |
+| GET | `/api/baseline` | Yes (Bearer) |
+| GET | `/api/policy` | Yes (Bearer) |
+| GET | `/api/audit` | Yes (Bearer) |
+| GET | `/api/quarantine` | Yes (Bearer) |
+| GET | `/api/dispatch` | Yes (Bearer) |
 
-### GitHub Pages
-- Static compatibility: supported (`dist` output)
-- Base path: set `VITE_BASE_PATH` when deploying under a subpath
-- Backend note: static hosting does not execute serverless routes; UI fallback states handle unavailable runtime APIs.
+## MCP Exposure
+
+| Method | Endpoint | Notes |
+|---|---|---|
+| GET | `/mcp` | MCP descriptor via rewrite to API route |
+| GET | `/mcp/health` | MCP health surface |
+| GET | `/.well-known/mcp.json` | MCP well-known descriptor |
+
+The deployment includes `vercel.json` rewrites for MCP route exposure, and a static descriptor fallback in `public/.well-known/mcp.json` for static compatibility.
+
+## Architecture Overview
+
+- `src/contracts/api.ts`: strict contracts for endpoint identity, auth policy, and typed success/error envelopes.
+- `src/lib/apiClient.ts`: typed frontend API caller with robust JSON/text fallback parsing.
+- `src/App.tsx`: end-to-end ACDP workflow UI (initial load, auth handling, staged execution, results).
+- `dev-api-plugin.ts`: local Vite middleware for API contract simulation during development.
+- `api/index.ts` and `api/[...slug].ts`: serverless handlers for deployment runtime.
+- `vercel.json`: route rewrites for MCP exposure.
 
 ## Troubleshooting
-- If protected endpoints return `UNAUTHORIZED`, authenticate first with operator credentials.
-- If API calls fail in static hosting, deploy on Vercel or provide external `VITE_API_BASE_URL`.
-- If local port conflicts occur, run `npm run dev -- --port <port>`.
-- If type issues appear, run `npm run type-check` and verify strict TypeScript contract changes.
+
+- If `/api` is unavailable, the UI will remain in an error state for initial load. Validate deployment logs and serverless function runtime.
+- If protected endpoints fail with unauthorized responses, complete authentication before running ACDP stages.
+- If routes return non-JSON error pages, the client now captures and surfaces response details in endpoint status.
+- If running in purely static hosting, serverless API routes are not executed. Use Vercel or set `VITE_API_BASE_URL` to an external API runtime.
+- If MCP endpoints are missing, verify `vercel.json` rewrite deployment and that API functions are healthy.
+
+## Deployment Notes
+
+- Recommended hosting: Vercel (Vite build + serverless API handlers).
+- Build output: `dist`.
+- Keep frontend and API runtime on the same origin when possible to avoid CORS and auth forwarding drift.
