@@ -1,0 +1,10 @@
+{
+  "protocol": "mcp",
+  "version": "1.0",
+  "server": "lingbot-map-mcp",
+  "capabilities": [
+    "health",
+    "scan-summary",
+    "policy-status"
+  ]
+}
