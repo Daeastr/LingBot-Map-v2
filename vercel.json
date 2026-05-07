@@ -1,7 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    { "source": "/api", "destination": "/api/health", "permanent": false }
+  ],
   "rewrites": [
-    { "source": "/api", "destination": "/static-api/root.json" },
     { "source": "/api/health", "destination": "/static-api/health.json" },
     { "source": "/api/status", "destination": "/static-api/status.json" },
     { "source": "/api/version", "destination": "/static-api/version.json" },

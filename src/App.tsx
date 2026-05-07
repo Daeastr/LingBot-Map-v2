@@ -107,8 +107,7 @@ export default function App() {
       return next;
     });
 
-    const apiRoot = coreResults.find(([endpoint]) => endpoint === '/api')?.[1];
-    const hasRuntime = Boolean(apiRoot) && (apiRoot?.ok || apiRoot?.error.code !== 'NOT_FOUND');
+    const hasRuntime = coreResults.some(([, response]) => response.ok);
     setBackendPresent(hasRuntime);
 
     const authNeeded = isAuthError(authProbeResult);
