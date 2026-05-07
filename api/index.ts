@@ -1,4 +1,4 @@
-import { resolveEndpointResponse } from '../src/contracts/api';
+import { resolveEndpointResponse } from './_lib/contracts';
 
 interface RequestLike {
   method?: string;
@@ -26,10 +26,11 @@ const getAuthFromHeaders = (headers: RequestLike['headers']): string | undefined
 };
 
 const buildResponse = (status: number, body: unknown): Response =>
-  Response.json(body, {
+  new Response(JSON.stringify(body), {
     status,
     headers: {
       'Cache-Control': 'no-store',
+      'Content-Type': 'application/json',
     },
   });
 
