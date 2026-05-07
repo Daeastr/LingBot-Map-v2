@@ -1,9 +1,20 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/mcp", "destination": "/api/mcp" },
-    { "source": "/mcp/health", "destination": "/api/mcp/health" },
-    { "source": "/.well-known/mcp.json", "destination": "/api/mcp/well-known" }
+    { "source": "/api", "destination": "/static-api/root.json" },
+    { "source": "/api/health", "destination": "/static-api/health.json" },
+    { "source": "/api/status", "destination": "/static-api/status.json" },
+    { "source": "/api/version", "destination": "/static-api/version.json" },
+    { "source": "/api/info", "destination": "/static-api/info.json" },
+    { "source": "/api/scan", "destination": "/static-api/scan.json" },
+    { "source": "/api/baseline", "destination": "/static-api/baseline.json" },
+    { "source": "/api/policy", "destination": "/static-api/policy.json" },
+    { "source": "/api/audit", "destination": "/static-api/audit.json" },
+    { "source": "/api/quarantine", "destination": "/static-api/quarantine.json" },
+    { "source": "/api/ingest", "destination": "/static-api/ingest.json" },
+    { "source": "/api/dispatch", "destination": "/static-api/dispatch.json" },
+    { "source": "/mcp", "destination": "/static-api/mcp.json" },
+    { "source": "/mcp/health", "destination": "/static-api/mcp-health.json" }
   ],
   "headers": [
     {

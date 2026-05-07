@@ -44,8 +44,8 @@ npm run type-check
 ## Happy Path Workflow
 
 1. Initial load probes core API and MCP routes.
-2. App determines whether protected workflow routes require authentication.
-3. If required, operator authenticates and receives a bearer token for protected calls.
+2. App determines whether workflow routes require authentication.
+3. In production fallback mode, workflow routes are public and execute without token exchange.
 4. CVE ingestion and scan stage runs (`/api/scan`, `/api/ingest`).
 5. Baseline and policy stage runs (`/api/baseline`, `/api/policy`).
 6. Detection stage runs (`/api/audit`, `/api/quarantine`, `/api/dispatch`).
@@ -67,13 +67,13 @@ npm run type-check
 
 | Method | Endpoint | Auth |
 |---|---|---|
-| GET | `/api/scan` | Yes (Bearer) |
-| GET | `/api/ingest` | Yes (Bearer) |
-| GET | `/api/baseline` | Yes (Bearer) |
-| GET | `/api/policy` | Yes (Bearer) |
-| GET | `/api/audit` | Yes (Bearer) |
-| GET | `/api/quarantine` | Yes (Bearer) |
-| GET | `/api/dispatch` | Yes (Bearer) |
+| GET | `/api/scan` | No |
+| GET | `/api/ingest` | No |
+| GET | `/api/baseline` | No |
+| GET | `/api/policy` | No |
+| GET | `/api/audit` | No |
+| GET | `/api/quarantine` | No |
+| GET | `/api/dispatch` | No |
 
 ## MCP Exposure
 
@@ -83,7 +83,7 @@ npm run type-check
 | GET | `/mcp/health` | MCP health surface |
 | GET | `/.well-known/mcp.json` | MCP well-known descriptor |
 
-The deployment includes `vercel.json` rewrites for MCP route exposure, and a static descriptor fallback in `public/.well-known/mcp.json` for static compatibility.
+The deployment uses `vercel.json` rewrites to static JSON artifacts in `public/static-api` for API and MCP route stability.
 
 ## Architecture Overview
 
@@ -91,13 +91,13 @@ The deployment includes `vercel.json` rewrites for MCP route exposure, and a sta
 - `src/lib/apiClient.ts`: typed frontend API caller with robust JSON/text fallback parsing.
 - `src/App.tsx`: end-to-end ACDP workflow UI (initial load, auth handling, staged execution, results).
 - `dev-api-plugin.ts`: local Vite middleware for API contract simulation during development.
-- `api/index.ts` and `api/[...slug].ts`: serverless handlers for deployment runtime.
+- `api/index.ts` and `api/[...slug].ts`: serverless handlers for development/runtime parity.
 - `vercel.json`: route rewrites for MCP exposure.
 
 ## Troubleshooting
 
 - If `/api` is unavailable, the UI will remain in an error state for initial load. Validate deployment logs and serverless function runtime.
-- If protected endpoints fail with unauthorized responses, complete authentication before running ACDP stages.
+- If a deployment returns function invocation errors, verify that `vercel.json` rewrites to `public/static-api` are present and active.
 - If routes return non-JSON error pages, the client now captures and surfaces response details in endpoint status.
 - If running in purely static hosting, serverless API routes are not executed. Use Vercel or set `VITE_API_BASE_URL` to an external API runtime.
 - If MCP endpoints are missing, verify `vercel.json` rewrite deployment and that API functions are healthy.

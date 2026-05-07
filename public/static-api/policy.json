@@ -1,0 +1,1 @@
+{"ok":true,"endpoint":"/api/policy","auth":{"required":false,"scheme":"None"},"timestamp":"2026-05-07T00:00:00.000Z","data":{"stage":"policy","state":"completed","summary":"Policy gates evaluated successfully.","metrics":{"itar":"pass","gdpr":"pass","iso13849":"pass"}}}

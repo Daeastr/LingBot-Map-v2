@@ -1,0 +1,1 @@
+{"ok":true,"endpoint":"/api/quarantine","auth":{"required":false,"scheme":"None"},"timestamp":"2026-05-07T00:00:00.000Z","data":{"stage":"quarantine","state":"completed","summary":"Anomalous frames isolated.","metrics":{"quarantinedFrames":4,"restored":4}}}

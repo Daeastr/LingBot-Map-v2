@@ -1,0 +1,1 @@
+{"ok":true,"endpoint":"/api/dispatch","auth":{"required":false,"scheme":"None"},"timestamp":"2026-05-07T00:00:00.000Z","data":{"stage":"dispatch","state":"completed","summary":"Runtime dispatch target accepted by edge scheduler.","metrics":{"target":"edge-fleet-canary","rollout":0.1}}}

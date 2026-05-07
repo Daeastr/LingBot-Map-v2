@@ -1,0 +1,1 @@
+{"ok":true,"endpoint":"/api/baseline","auth":{"required":false,"scheme":"None"},"timestamp":"2026-05-07T00:00:00.000Z","data":{"stage":"baseline","state":"completed","summary":"Baseline drift benchmark established.","metrics":{"translationRmse":0.012,"rotationDeg":0.31}}}

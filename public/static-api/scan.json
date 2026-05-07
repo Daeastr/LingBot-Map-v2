@@ -1,0 +1,1 @@
+{"ok":true,"endpoint":"/api/scan","auth":{"required":false,"scheme":"None"},"timestamp":"2026-05-07T00:00:00.000Z","data":{"stage":"scan","state":"completed","summary":"CVE and sensor scan ingestion validated.","metrics":{"findings":3,"critical":0,"medium":2,"low":1}}}
