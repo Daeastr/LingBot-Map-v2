@@ -1,0 +1,1 @@
+{"ok":true,"endpoint":"/api/audit","auth":{"required":false,"scheme":"None"},"timestamp":"2026-05-07T00:00:00.000Z","data":{"stage":"audit","state":"completed","summary":"Audit pipeline finished without blocking violations.","metrics":{"evidenceArtifacts":6,"unresolved":0}}}

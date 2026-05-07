@@ -1,0 +1,1 @@
+{"ok":true,"endpoint":"/mcp","auth":{"required":false,"scheme":"None"},"timestamp":"2026-05-07T00:00:00.000Z","data":{"protocol":"mcp","version":"1.0","server":"lingbot-map-mcp","capabilities":["health","scan-summary","policy-status"]}}
