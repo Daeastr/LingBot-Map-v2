@@ -91,7 +91,7 @@ The deployment uses `vercel.json` rewrites to static JSON artifacts in `public/s
 - `src/lib/apiClient.ts`: typed frontend API caller with robust JSON/text fallback parsing.
 - `src/App.tsx`: end-to-end ACDP workflow UI (initial load, auth handling, staged execution, results).
 - `dev-api-plugin.ts`: local Vite middleware for API contract simulation during development.
-- `api/index.ts` and `api/[...slug].ts`: serverless handlers for development/runtime parity.
+- `api/[...slug].ts`: serverless catch-all handler for development/runtime parity.
 - `vercel.json`: route rewrites for MCP exposure.
 
 ## Troubleshooting
